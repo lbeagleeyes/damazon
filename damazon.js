@@ -1,6 +1,6 @@
+var inquirer = require("inquirer");
 require("dotenv").config();
 var keys = require("./keys.js");
-var inquirer = require("inquirer");
 var mysql = require("mysql");
 
 var connection = mysql.createConnection({
@@ -24,6 +24,7 @@ var connection = mysql.createConnection({
   }
 });
 
+
 function mainFlow() {
   inquirer
     .prompt([
@@ -34,8 +35,6 @@ function mainFlow() {
       }])
     .then(function (res) {
       if (res.user != "") {
-        console.log(res.user);
-
         getUserType(res.user, displayOptions);
       } else {
         mainFlow();
@@ -46,7 +45,6 @@ function mainFlow() {
 function getUserType(userName, callback) {
   connection.connect(function (err) {
     if (err) throw err;
-    console.log(userName);
     connection.query("SELECT IsManager FROM users WHERE ?", { UserName: userName }, function (err, res) {
       if (err) throw err;
       callback(res[0].IsManager);
@@ -61,7 +59,7 @@ function displayOptions(isAdmin) {
         {
           type: "list",
           message: "Select what you would like to do",
-          choices: [{ name: 'Buy products' }, { name: 'View low inventory' }
+          choices: [{ name: 'Buy' }, { name: 'Inventory' }
             // , { name: 'Add to inventory' }, { name: 'Add new Products' }
           ],
           name: "option"
@@ -81,14 +79,15 @@ function displayOptions(isAdmin) {
 }
 
 
-function performAdminAction(action) {
-  switch (action) {
-    case "Buy products":
+function performAdminAction(option) {
+  console.log(option);
+  switch (option) {
+    case "Buy":
       showAllProducts(getBuy);
       break;
 
-    case "View low inventory":
-      showLowInventory(performAdminAction);
+    case "Inventory":
+      showLowInventory();
       break;
 
     default:
@@ -103,18 +102,26 @@ function performAdminAction(action) {
 function showAllProducts(callback) {
   connection.query("SELECT * FROM products", function (err, res) {
     if (err) throw err;
-    // Log all results of the SELECT statement
-    console.log(res);
+    //console.log(res);
+
+    for(var i = 0; i < res.length; i++){
+      console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tPrice:${res[i].UnitPrice}`);
+    }
+    console.log("\n");
     callback();
   });
 }
 
-function showLowInventory(callback) {
+function showLowInventory() {
   connection.query("SELECT * FROM products WHERE StockQuatity < StockThreshold ", function (err, res) {
     if (err) throw err;
-    // Log all results of the SELECT statement
-    console.log(res + "\n");
-    callback();
+
+    // console.log(JSON.stringify(res) + "\n");
+    for(var i = 0; i < res.length; i++){
+      console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tQuantity:${res[i].StockQuatity}\tThreshold:${res[i].StockThreshold}`);
+    }
+    console.log("\n");
+    displayOptions(true);
   });
 }
 
@@ -124,16 +131,37 @@ function getBuy() {
     .prompt([
       {
         type: "input",
-        message: "Enter the ids of the products you would like to buy:",
-        name: "products"
-      }])
+        message: "Enter the id of the product you would like to buy, 0 to exit:",
+        name: "product"
+      }, 
+      {
+        when: function (response) {
+          return response.product == "0"? false:true;
+        },
+        type: "input",
+        message: "Quantity:",
+        name: "quantity"
+      }
+    ])
     .then(function (res) {
-      if (res.products != "") {
-        console.log(res.products);
+      if (res.product != "0") {
+        console.log(res.product);
+        buy(res,getBuy);
       } else {
-        buy();
+        //not functional yet
+        //displayOrder();
       }
     });
+}
+
+function buy(res, callback){
+
+ console.log(res.product, res.quantity);
+
+ //not functional
+// catalog.Order.addProduct(Catalog.getProduct(res.productId), res.quantity);
+
+ callback();
 }
 
 mainFlow();
