@@ -1,0 +1,29 @@
+{
+  "name": "damazon",
+  "version": "1.0.0",
+  "description": "Sales inventory system",
+  "main": "damazon.js",
+  "scripts": {
+    "test": "damazon.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lbeagleeyes/damazon.git"
+  },
+  "keywords": [
+    "inventory",
+    "sales",
+    "nodejs"
+  ],
+  "author": "Laura Bermudez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lbeagleeyes/damazon/issues"
+  },
+  "homepage": "https://github.com/lbeagleeyes/damazon#readme",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "inquirer": "^6.3.1",
+    "mysql": "^2.17.1"
+  }
+}
