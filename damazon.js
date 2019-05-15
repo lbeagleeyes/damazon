@@ -1,29 +1,17 @@
+
 var inquirer = require("inquirer");
 require("dotenv").config();
 var keys = require("./keys.js");
-var mysql = require("mysql");
+var CatalogLib = require("./catalog.js");
+var DBConnection = require("./dbConnection.js");
 
-var connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: keys.dbInfo.psswd,
-  database: keys.dbInfo.dbName,
-  typeCast: function castField(field, useDefaultTypeCasting) {
-    // We only want to cast bit fields that have a single-bit in them. If the field
-    // has more than one bit, then we cannot assume it is supposed to be a Boolean.
-    if ((field.type === "BIT") && (field.length === 1)) {
+var dbConnection = new DBConnection("localhost", 3306, "root", keys.dbInfo.psswd, keys.dbInfo.dbName);
 
-      var bytes = field.buffer();
-      // A Buffer in Node represents a collection of 8-bit unsigned integers.
-      // Therefore, our single "bit field" comes back as the bits '0000 0001',
-      // which is equivalent to the number 1.
-      return (bytes[0] === 1);
-    }
-    return (useDefaultTypeCasting());
-  }
-});
+var catalog = new CatalogLib.Catalog(dbConnection);
 
+var currentUser = "";
+var currentOrder;
+var isAdmin = false;
 
 function mainFlow() {
   inquirer
@@ -35,24 +23,22 @@ function mainFlow() {
       }])
     .then(function (res) {
       if (res.user != "") {
-        getUserType(res.user, displayOptions);
+        currentUser = res.user;
+        getUserType(currentUser);
       } else {
         mainFlow();
       }
     });
 }
 
-function getUserType(userName, callback) {
-  connection.connect(function (err) {
-    if (err) throw err;
-    connection.query("SELECT IsManager FROM users WHERE ?", { UserName: userName }, function (err, res) {
-      if (err) throw err;
-      callback(res[0].IsManager);
-    });
+function getUserType(userName) {
+  dbConnection.performQuery("SELECT IsManager FROM users WHERE ?", { UserName: userName }).then((res) => {
+    isAdmin = res[0].IsManager;
+    displayOptions();
   });
 }
 
-function displayOptions(isAdmin) {
+function displayOptions() {
   if (isAdmin) {
     inquirer
       .prompt([
@@ -97,14 +83,9 @@ function performAdminAction(option) {
   }
 }
 
-
-
 function showAllProducts(callback) {
-  connection.query("SELECT * FROM products", function (err, res) {
-    if (err) throw err;
-    //console.log(res);
-
-    for(var i = 0; i < res.length; i++){
+  catalog.listAllProducts().then((res) => {
+    for (var i = 0; i < res.length; i++) {
       console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tPrice:${res[i].UnitPrice}`);
     }
     console.log("\n");
@@ -113,11 +94,8 @@ function showAllProducts(callback) {
 }
 
 function showLowInventory() {
-  connection.query("SELECT * FROM products WHERE StockQuatity < StockThreshold ", function (err, res) {
-    if (err) throw err;
-
-    // console.log(JSON.stringify(res) + "\n");
-    for(var i = 0; i < res.length; i++){
+  catalog.showLowInventory().then((res) => {
+    for (var i = 0; i < res.length; i++) {
       console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tQuantity:${res[i].StockQuatity}\tThreshold:${res[i].StockThreshold}`);
     }
     console.log("\n");
@@ -131,12 +109,12 @@ function getBuy() {
     .prompt([
       {
         type: "input",
-        message: "Enter the id of the product you would like to buy, 0 to exit:",
+        message: "Enter the id of the product you would like to buy, 0 to checkout and exit:",
         name: "product"
-      }, 
+      },
       {
         when: function (response) {
-          return response.product == "0"? false:true;
+          return response.product == "0" ? false : true;
         },
         type: "input",
         message: "Quantity:",
@@ -146,22 +124,49 @@ function getBuy() {
     .then(function (res) {
       if (res.product != "0") {
         console.log(res.product);
-        buy(res,getBuy);
+        buy(res, getBuy);
       } else {
-        //not functional yet
-        //displayOrder();
+        displayOrder();
       }
     });
 }
 
-function buy(res, callback){
+function buy(orderItem, callback) {
 
- console.log(res.product, res.quantity);
+  if (typeof (currentOrder) == "undefined") {
+    currentOrder = new CatalogLib.Order(dbConnection, currentUser);
+  }
+  
+  catalog.getProduct(orderItem.product).then((result) => {
+    var product = new CatalogLib.Product(orderItem.product, result[0].ProductName, result[0].StockQuatity, result[0].StockThreshold, result[0].DepartmentId, result[0].UnitPrice);
+    
+    if (+orderItem.quantity < +product.stockQuantity) {
+      currentOrder.addProduct(product, orderItem.quantity);
+      console.log(`${product.productName} added to cart.`);
+      
+    } else {
+      console.log(`Not enough quantity in stock. ${product.productName} current stock = ${product.stockQuantity}\nPlease select an available quantity.`);
+    }
 
- //not functional
-// catalog.Order.addProduct(Catalog.getProduct(res.productId), res.quantity);
+    callback();
+  });
+}
 
- callback();
+function displayOrder() {
+  //currentOrder.save();
+  var orderItems = currentOrder.orderItems;
+  console.log("Id\tItem\tPrice\tQuantity\tTotal");
+
+  for (var i = 0; i < orderItems.length; i++) {
+    var prod = orderItems[i].product;
+    var subTotal = prod.price * orderItems[i].quantity;
+    console.log(`${prod.productId}\t${prod.productName}\t${prod.price}\t${orderItems[i].quantity}\t${subTotal}`);
+  }
+
+  console.log("\nTotal: $" + currentOrder.total);
+
+  dbConnection.endConnection();
+
 }
 
 mainFlow();
