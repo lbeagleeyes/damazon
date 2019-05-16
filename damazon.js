@@ -36,9 +36,11 @@ function mainFlow() {
 function createCurrentUser(userName){
  usersMgr.getUser(userName).then((res) => {
     currentUser = new UsersLib.User(res[0].UserId, res[0].UserName, res[0].Phone, res[0].IsManager);
-
     displayOptions();
-  }); 
+  }).catch((err) => {
+    console.log("User doesn't exist, please enter an existing user.");
+    mainFlow();
+  });
 }
 
 
@@ -57,7 +59,7 @@ function displayOptions() {
         }])
       .then(function (res) {
         if (res.option != "") {
-          console.log(res.option);
+          //console.log(res.option);
           performAdminAction(res.option);
         } else {
           displayOptions();
@@ -65,7 +67,7 @@ function displayOptions() {
       });
     //not an admin
   } else {
-    showAllProducts(getBuy);
+    showAllProducts();
   }
 }
 
@@ -74,7 +76,7 @@ function performAdminAction(option) {
   // console.log(option);
   switch (option) {
     case "Buy":
-      showAllProducts(getBuy);
+      showAllProducts();
       break;
 
     case "Inventory":
@@ -88,13 +90,13 @@ function performAdminAction(option) {
   }
 }
 
-function showAllProducts(callback) {
+function showAllProducts() {
   catalog.listAllProducts().then((res) => {
     for (var i = 0; i < res.length; i++) {
       console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tPrice:${res[i].UnitPrice}`);
     }
     console.log("\n");
-    callback();
+    getBuy();
   });
 }
 
@@ -156,6 +158,10 @@ function buy(orderItem, callback) {
     }
 
     callback();
+  }).catch(err => {
+    console.log("Product id does not exist.");
+    showAllProducts();
+    
   });
 }
 
@@ -174,8 +180,9 @@ function displayOrder() {
 
   currentOrder.save().then((res)=>{
     dbConnection.endConnection();
+  }).catch((err)=>{
+    console.log("Unable to save order. Error: " + err);
   });
-
 }
 
 mainFlow();
