@@ -71,7 +71,7 @@ function displayOptions() {
 
 
 function performAdminAction(option) {
-  console.log(option);
+  // console.log(option);
   switch (option) {
     case "Buy":
       showAllProducts(getBuy);
@@ -99,6 +99,8 @@ function showAllProducts(callback) {
 }
 
 function showLowInventory() {
+
+  console.log("Items with inventory lower than threshold\n");
   catalog.showLowInventory().then((res) => {
     for (var i = 0; i < res.length; i++) {
       console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tQuantity:${res[i].StockQuatity}\tThreshold:${res[i].StockThreshold}`);
