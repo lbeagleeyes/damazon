@@ -4,14 +4,15 @@ require("dotenv").config();
 var keys = require("./keys.js");
 var CatalogLib = require("./catalog.js");
 var DBConnection = require("./dbConnection.js");
+var UsersLib = require("./users.js");
 
 var dbConnection = new DBConnection("localhost", 3306, "root", keys.dbInfo.psswd, keys.dbInfo.dbName);
 
 var catalog = new CatalogLib.Catalog(dbConnection);
+var usersMgr = new UsersLib.UsersManager(dbConnection);
 
-var currentUser = "";
+var currentUser;
 var currentOrder;
-var isAdmin = false;
 
 function mainFlow() {
   inquirer
@@ -23,23 +24,27 @@ function mainFlow() {
       }])
     .then(function (res) {
       if (res.user != "") {
-        currentUser = res.user;
-        getUserType(currentUser);
+
+        createCurrentUser(res.user);
+        
       } else {
         mainFlow();
       }
     });
 }
 
-function getUserType(userName) {
-  dbConnection.performQuery("SELECT IsManager FROM users WHERE ?", { UserName: userName }).then((res) => {
-    isAdmin = res[0].IsManager;
+function createCurrentUser(userName){
+ usersMgr.getUser(userName).then((res) => {
+    currentUser = new UsersLib.User(res[0].UserId, res[0].UserName, res[0].Phone, res[0].IsManager);
+
     displayOptions();
-  });
+  }); 
 }
 
+
 function displayOptions() {
-  if (isAdmin) {
+  
+  if (currentUser.isManager) {
     inquirer
       .prompt([
         {
@@ -55,7 +60,7 @@ function displayOptions() {
           console.log(res.option);
           performAdminAction(res.option);
         } else {
-          displayOptions(isAdmin);
+          displayOptions();
         }
       });
     //not an admin
@@ -78,7 +83,7 @@ function performAdminAction(option) {
 
     default:
       console.log('Option not supported: ' + action);
-      displayOptions(true);
+      displayOptions();
       break;
   }
 }
@@ -99,7 +104,7 @@ function showLowInventory() {
       console.log(`Id:${res[i].ProductId}\tName:${res[i].ProductName}\tQuantity:${res[i].StockQuatity}\tThreshold:${res[i].StockThreshold}`);
     }
     console.log("\n");
-    displayOptions(true);
+    displayOptions();
   });
 }
 
@@ -153,7 +158,7 @@ function buy(orderItem, callback) {
 }
 
 function displayOrder() {
-  //currentOrder.save();
+
   var orderItems = currentOrder.orderItems;
   console.log("Id\tItem\tPrice\tQuantity\tTotal");
 
@@ -165,7 +170,9 @@ function displayOrder() {
 
   console.log("\nTotal: $" + currentOrder.total);
 
-  dbConnection.endConnection();
+  currentOrder.save().then((res)=>{
+    dbConnection.endConnection();
+  });
 
 }
 
