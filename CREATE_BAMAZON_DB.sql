@@ -66,7 +66,26 @@ CREATE TABLE OrderItems
 );
 
 
+use damazon_db;
 
+drop procedure if exists insert_order;
+
+delimiter #
+
+create procedure insert_order
+(
+in p_userid INT,
+in p_total decimal(12,2)
+)
+begin
+
+ insert into orders (UserId, TotalAmount) values (p_userid, p_total);
+
+ select last_insert_id() as OrderId;
+
+end#
+
+delimiter ;
 
 
 
