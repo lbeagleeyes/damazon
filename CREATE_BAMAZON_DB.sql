@@ -1,4 +1,3 @@
--- ****************** SqlDBM: Microsoft SQL Server ******************
 -- ******************************************************************
 
 DROP DATABASE IF EXISTS damazon_db;
@@ -15,7 +14,7 @@ CREATE TABLE Departments
  OverHeadCosts  float NOT NULL ,
  primary key(DepartmentId)
 );
--- ************************************** Order
+-- ************************************** Users
 
 CREATE TABLE Users
 (
@@ -27,6 +26,8 @@ CREATE TABLE Users
  CONSTRAINT PK_Customer PRIMARY KEY CLUSTERED (UserId ASC)
 );
 
+-- ************************************** Orders
+
 CREATE TABLE Orders (
  OrderId     int auto_increment NOT NULL ,
  UserId     int NOT NULL ,
@@ -37,6 +38,8 @@ primary key(OrderId),
 foreign key(UserId) references Users(UserId)
  
 );
+
+-- ************************************** Products
 
 CREATE TABLE Products
 (
@@ -65,7 +68,7 @@ CREATE TABLE OrderItems
  CONSTRAINT FK_OrderItem_ProductId_Product FOREIGN KEY (ProductId)  REFERENCES Products(ProductId)
 );
 
-
+-- ************************************** Insert order stored procedure
 use damazon_db;
 
 drop procedure if exists insert_order;
