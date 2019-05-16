@@ -133,14 +133,14 @@ function getBuy() {
     .then(function (res) {
       if (res.product != "0") {
         console.log(res.product);
-        buy(res, getBuy);
+        buy(res);
       } else {
         displayOrder();
       }
     });
 }
 
-function buy(orderItem, callback) {
+function buy(orderItem) {
 
   if (typeof (currentOrder) == "undefined") {
     currentOrder = new CatalogLib.Order(dbConnection, currentUser);
@@ -157,7 +157,7 @@ function buy(orderItem, callback) {
       console.log(`Not enough quantity in stock. ${product.productName} current stock = ${product.stockQuantity}\nPlease select an available quantity.`);
     }
 
-    callback();
+    getBuy();
   }).catch(err => {
     console.log("Product id does not exist.");
     showAllProducts();
