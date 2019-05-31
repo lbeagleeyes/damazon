@@ -30,5 +30,5 @@ Inventory/Sales node.js system
 * Catalog and Managers control business objects logic
 
 
-### View demo: https://drive.google.com/file/d/1_cTebQHLGqPoWPwdCbwFNi0QlIsCsBO7/view
+### [View demo](https://drive.google.com/file/d/1_cTebQHLGqPoWPwdCbwFNi0QlIsCsBO7/view)
 
