@@ -46,7 +46,7 @@ CREATE TABLE Products
  ProductName    varchar(50) NOT NULL ,
  DepartmentId   int NOT NULL ,
  UnitPrice      decimal(12,2) NULL ,
- StockQuatity   bigint NOT NULL default(0) ,
+ StockQuatity   int NOT NULL default 0 ,
  StockThreshold int NOT NULL ,
 
  primary key(ProductId),
