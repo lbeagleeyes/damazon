@@ -1,5 +1,4 @@
 -- ******************************************************************
-
 DROP DATABASE IF EXISTS damazon_db;
 
 CREATE DATABASE damazon_db;
@@ -23,7 +22,7 @@ CREATE TABLE Users
  Phone     varchar(20) NULL ,
  IsManager bit NOT NULL ,
 
- CONSTRAINT PK_Customer PRIMARY KEY CLUSTERED (UserId ASC)
+PRIMARY KEY  (UserId )
 );
 
 -- ************************************** Orders
@@ -50,8 +49,8 @@ CREATE TABLE Products
  StockQuatity   bigint NOT NULL default(0) ,
  StockThreshold int NOT NULL ,
 
- CONSTRAINT PK_Product PRIMARY KEY CLUSTERED (ProductId ASC),
- CONSTRAINT FK_Product_DepartmentId_Departments FOREIGN KEY (DepartmentId)  REFERENCES Departments(DepartmentId)
+ primary key(ProductId),
+ foreign key (DepartmentId)  REFERENCES Departments(DepartmentId)
 );
 
 -- ************************************** OrderItem
@@ -63,9 +62,9 @@ CREATE TABLE OrderItems
  UnitPrice decimal(12,2) NOT NULL ,
  Quantity  int NOT NULL ,
 
- CONSTRAINT PK_OrderItem PRIMARY KEY CLUSTERED (OrderId ASC, ProductId ASC),
- CONSTRAINT FK_OrderItem_OrderId_Order FOREIGN KEY (OrderId)  REFERENCES Orders(OrderId),
- CONSTRAINT FK_OrderItem_ProductId_Product FOREIGN KEY (ProductId)  REFERENCES Products(ProductId)
+ PRIMARY KEY  (OrderId , ProductId ),
+ FOREIGN KEY (OrderId)  REFERENCES Orders(OrderId),
+ FOREIGN KEY (ProductId)  REFERENCES Products(ProductId)
 );
 
 -- ************************************** Insert order stored procedure
@@ -89,7 +88,4 @@ begin
 end#
 
 delimiter ;
-
-
-
 
